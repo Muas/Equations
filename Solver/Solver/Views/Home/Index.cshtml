@@ -16,30 +16,52 @@
 <script type="text/javascript">
 
     var text;
+
     var checkEquation = function (equation, i) {
-        
-        debugger;
+        //if it is equation
         if (equation.indexOf('=') <= 0 || equation.indexOf('=') != equation.lastIndexOf('=') || equation.lastIndexOf('=') == equation.length - 1) {
             text += 'Check equation at line ' + (++i) + '\n';
             $('#result-area').val(text);
         }
+        //if there is no wrong symbol
+        for (var j = 0; j < equation.length; j++) {
+            if (!checkCode(equation.charCodeAt(j))) {
+                text += 'Equation at line ' + (++i) + ' contains wrong symbol\n';
+                break;
+            }
+        }
+        //if there is smth after = except numbers
+        var equalityPos = equation.indexOf('=');
+        for (j = equalityPos + 1; j < equation.length; j++) {
+            if (!(equation[j].toLowerCase() >= '0' && equation[j].toLowerCase() <= '9')) {
+                text += 'Equation at line ' + (++i) + ' is not in cannonical form\n';
+                break;
+            }
+        }
+    };
+
+    var changeCommas = function (equation) {
+        equation=equation.replace(/,/g, ".");
+        $('#result-area').val($('#result-area').val() + '\n'+ equation);
+    };
+
+    var checkCode = function(code) {
+        return code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 42 && code <= 46 || code == 61 || code == 13 || code == 8;
     };
 
     $('#equations-field').keypress(function (e) {
-        if (!(e.which >= 48 && e.which <= 57 || e.which >= 65 && e.which <= 90 || e.which >= 97 && e.which <= 122 || e.which >= 42 && e.which <= 46 || e.which == 61 || e.which == 13 || e.which == 8)) {
+        if (!checkCode(e.which)) {
             e.preventDefault();
             alert('You\'re doing smth wrong');
-            return false;
         }
     });
 
-
-    $('#solve-equations-btn').click(function () {
+    $('#solve-equations-btn').click(function() {
         var equations = document.getElementById('equations-field').value.split('\n');
         text = '';
+        equations.forEach(changeCommas);
         equations.forEach(checkEquation);
         if (text.length != 0) return false;
-        debugger;
         $.ajax({
             url: '@(Url.Action("GetResult","Home"))',
             type: 'Post',
@@ -47,18 +69,12 @@
             data: {
                 equations: JSON.stringify(equations)
             }
-        }).done(function (request) {
+        }).done(function(request) {
             if (request.result) {
                 $('#result-area').val(request.reason);
-            }
-            else {
+            } else {
                 alert(request.reason);
             }
         });
-        /*sucess: function (request) {
-        debugger;
-               
-        }
-        });*/
     });
 </script>
