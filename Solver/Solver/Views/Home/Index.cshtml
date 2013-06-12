@@ -1,0 +1,64 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "title";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h5>This app allows to get solution for system of linear equations in canonical form</h5>
+<h3>System of linear equations:</h3>
+<textarea rows="5" id="equations-field" placeholder="Write here a system of linear equations"></textarea>
+<button class="ui-button" id="solve-equations-btn">Solve</button>
+<br/>
+<h3>Solution</h3>
+<textarea rows="5" readonly="readonly" id="result-area"></textarea>
+
+<script type="text/javascript">
+
+    var text;
+    var checkEquation = function (equation, i) {
+        
+        debugger;
+        if (equation.indexOf('=') <= 0 || equation.indexOf('=') != equation.lastIndexOf('=') || equation.lastIndexOf('=') == equation.length - 1) {
+            text += 'Check equation at line ' + (++i) + '\n';
+            $('#result-area').val(text);
+        }
+    };
+
+    $('#equations-field').keypress(function (e) {
+        if (!(e.which >= 48 && e.which <= 57 || e.which >= 65 && e.which <= 90 || e.which >= 97 && e.which <= 122 || e.which >= 42 && e.which <= 46 || e.which == 61 || e.which == 13 || e.which == 8)) {
+            e.preventDefault();
+            alert('You\'re doing smth wrong');
+            return false;
+        }
+    });
+
+
+    $('#solve-equations-btn').click(function () {
+        var equations = document.getElementById('equations-field').value.split('\n');
+        text = '';
+        equations.forEach(checkEquation);
+        if (text.length != 0) return false;
+        debugger;
+        $.ajax({
+            url: '@(Url.Action("GetResult","Home"))',
+            type: 'Post',
+            datatype: 'Json',
+            data: {
+                equations: JSON.stringify(equations)
+            }
+        }).done(function (request) {
+            if (request.result) {
+                $('#result-area').val(request.reason);
+            }
+            else {
+                alert(request.reason);
+            }
+        });
+        /*sucess: function (request) {
+        debugger;
+               
+        }
+        });*/
+    });
+</script>
