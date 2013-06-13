@@ -5,16 +5,48 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h5>This app allows to get solution for system of linear equations in canonical form</h5>
-<h3>System of linear equations:</h3>
-<textarea rows="5" id="equations-field" placeholder="Write here a system of linear equations"></textarea>
-<button class="ui-button" id="solve-equations-btn">Solve</button>
-<br/>
-<h3>Solution</h3>
-<textarea rows="5" readonly="readonly" id="result-area"></textarea>
+<style type="text/css">
+    .equations-field {
+        width: 50%;
+    }
+    .error-description {
+        display: none;
+    }
+    .result-area {
+        width: 50%;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <h5>This application allows to get solution for system of linear equations written in canonical form</h5>
+    </div>
+    <div class="row-fluid">
+        <h3>Your system of linear equations:</h3>        
+    </div>
+    <div class="row-fluid">
+        <textarea class = "equations-field" rows="7" id="equations-field" placeholder="Write here a system of linear equations" \></textarea>        
+    </div>
+    <div class="row-fluid">
+        <label class="label-important error-description"></label>
+    </div>
+    <div class="row-fluid">
+        <button class="btn" id="solve-equations-btn">Solve</button>    
+    </div>
+    <div class="row-fluid">
+        <h3>Solution</h3>   
+    </div>
+    <div class="row-fluid">
+        <textarea rows="7" class = "result-area" readonly="readonly" id="result-area"></textarea>
+    </div>
+</div>
+
 
 <script type="text/javascript">
-
+    $(function () {
+        $('#solve-equations-btn').attr('disabled', 'true');
+    });
+    
     var text;
 
     var checkEquation = function (equation, i) {
@@ -54,6 +86,9 @@
             e.preventDefault();
             alert('You\'re doing smth wrong');
         }
+        else {
+            $('#solve-equations-btn').attr('disabled', false); }
+        
     });
 
     $('#solve-equations-btn').click(function() {
