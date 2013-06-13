@@ -6,7 +6,7 @@ namespace Solver.Tools
 {
     public static class Parser
     {
-        private static readonly char[] Signs = {'-','+','*','/','='};
+        private static readonly char[] Signs = {'-','+','*','='};
 
         public static SortedSet<char> GetAllVariables(List<string> equations)
         {
@@ -26,12 +26,17 @@ namespace Solver.Tools
         {
             foreach (var equation in equations)
             {
+                if (equation.IndexOf('=') <= 0 || equation.LastIndexOf('=') != equation.IndexOf('='))
+                    return false;
                 foreach (var symbol in equation)
                 {
                     if (!Signs.Any(x => x == symbol) && !(symbol >= 'a' && symbol <= 'z') && !(symbol >='0' && symbol <='9'))
                         return false;
                 }
+               
             }
+
+
             return true;
         }
 
@@ -49,7 +54,15 @@ namespace Solver.Tools
                 try
                 {
                     var conditionList = ParseCondition(conditionString);
-                    var result = Convert.ToSingle(resultString);
+                    float result;
+                    try
+                    {
+                        result = Convert.ToSingle(resultString);
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception("Wrong right side!");
+                    }
                     var j = 0;
                     foreach (var variable in variables)
                     {
@@ -60,9 +73,9 @@ namespace Solver.Tools
                     }
                     matrix[i, variables.Count] = result;
                 }
-                catch(Exception)
+                catch(Exception e)
                 {
-                    
+                    throw e;
                 }
                 i++;
             }
@@ -76,13 +89,37 @@ namespace Solver.Tools
             var currentCoefficient = string.Empty;
             while (i < conditionString.Length)
             {
-                if (conditionString[i] >= '0' && conditionString[i] <= '9' || conditionString[i] == '.' || conditionString[i] == '-')
+                if (conditionString[i] >= '0' && conditionString[i] <= '9')  
                 {
+                    if (i > 0 && (conditionString[i-1] >= 'a' && conditionString[i-1] <= 'z' || conditionString[i-1] == '*'))
+                    {
+                        throw new Exception("Wrong sequence!");
+                    }
+                    currentCoefficient += conditionString[i];
+                }
+                if (conditionString[i] == '.')
+                {
+                    if (i == 0 || currentCoefficient == string.Empty || !(conditionString[i-1] >='0' && conditionString[i-1] >= '9'))
+                    {
+                        throw new Exception("Wrong sequence!");
+                    }
+                    currentCoefficient += conditionString[i];
+                }
+                if (conditionString [i] == '-')
+                {
+                    if (i != 0 && !(conditionString[i-1] >= 'a' && conditionString[i-1] <= 'z'))
+                    {
+                        throw  new Exception("Wrong sequence!");
+                    }
                     currentCoefficient += conditionString[i];
                 }
                 if (conditionString[i] >= 'a' && conditionString[i] <= 'z')
                 {
                     float coefficient;
+                    if (i != 0 && conditionString[i-1]  >= 'a' && conditionString[i-1] <= 'z')
+                    {
+                        throw new Exception("Wrong sequence!");
+                    }
                     if (currentCoefficient == "-")
                         coefficient = -1;
                     else if (currentCoefficient == string.Empty)
@@ -90,6 +127,13 @@ namespace Solver.Tools
                     else coefficient = Convert.ToSingle(currentCoefficient);
                     conditionList.Add(conditionString[i],coefficient);
                     currentCoefficient = string.Empty;
+                }
+                if (conditionString[i] == '*')
+                {
+                    if (i == 0 || !(conditionString[i-1] >='0' && conditionString[i-1] >= '9'))
+                    {
+                        throw new Exception("Wrong sequence!");
+                    }
                 }
                 i++;
             }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 using System.Web.Script.Serialization;
 using Solver.Tools;
@@ -22,18 +21,37 @@ namespace Solver.Controllers
             RemoveWhiteSpaces(equationsList);
             if (!equationsList.SystemIsCorrect()) return Json(new {result = false, reason = "It's not a system"});
             if (!SystemIsSolvable(equationsList)) return Json(new { result = false, reason = "System cannot be solved" });
-            var matrix = equationsList.GetMatrix();
-            var isSolved = LinearEquationSolver.Solve(matrix);
+            float[,] matrix;
+            bool isSolved = false;
+            try
+            {
+                matrix = equationsList.GetMatrix();
+                
+            }
+            catch(Exception e)
+            {
+                return Json(new {result = false, reason = e.Message});
+            }
+            try
+            {
+                isSolved = LinearEquationSolver.Solve(matrix);
+            }
+            catch (Exception)
+            {
+                return Json(new {result = false, reason = "This system cannot be solved"});
+            }
+            
             if (isSolved)
             {
                 var variables = Parser.GetAllVariables(equationsList);
                 var resultList = new List<string>();
                 for (int i = 0; i < variables.Count; i++)
                 {
-                    resultList.Add(string.Format("{0}={1}", variables.ElementAt(i),matrix[i,variables.Count]));
+                    resultList.Add(string.Format("{0}={1}", variables.ElementAt(i), matrix[i, variables.Count]));
                 }
-                return Json(new {result = true, reason = resultList});
+                return Json(new { result = true, reason = resultList });
             }
+            
             return Json(new {result = false});
         }
 
