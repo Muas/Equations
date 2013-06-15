@@ -11,30 +11,41 @@
     }
     .error-description {
         display: none;
+        width: 50%;
+        padding: 6px;
+        margin-left: -4px;
     }
     .result-area {
         width: 50%;
     }
 </style>
 
-<div class="container-fluid">
+<div class="container">
     <div class="row-fluid">
-        <h5>This application allows to get solution for system of linear equations written in canonical form</h5>
+        <h5>This application solves linear systems written in canonical form</h5>
+        <ul>
+            <li>Each equation should be in a canonical form (like 2*a+3*b=-8)  </li>
+            <li>Equation can be written both with or without multiplication (e.g. 2*a+3*b=-8 is equal to 2a+3b=-8)</li>
+            <li>Write one equation per line</li>
+        </ul>
+    </div>
+
+    <div class="row-fluid">
+        <h4>Your system of linear equations:</h4>        
     </div>
     <div class="row-fluid">
-        <h3>Your system of linear equations:</h3>        
+        <textarea class = "equations-field" rows="7" id="equations-field" placeholder="Write here a system of linear equations: one equation per line"></textarea>        
     </div>
-    <div class="row-fluid">
-        <textarea class = "equations-field" rows="7" id="equations-field" placeholder="Write here a system of linear equations" \></textarea>        
-    </div>
-    <div class="row-fluid">
-        <label class="label-important error-description"></label>
+    <div class="row-fluid ">
+        <div class="error-description" id="error-information">
+            <div class="alert alert-error"></div>
+        </div>
     </div>
     <div class="row-fluid">
         <button class="btn" id="solve-equations-btn">Solve</button>    
     </div>
     <div class="row-fluid">
-        <h3>Solution</h3>   
+        <h4>Solution</h4>   
     </div>
     <div class="row-fluid">
         <textarea rows="7" class = "result-area" readonly="readonly" id="result-area"></textarea>
@@ -43,58 +54,91 @@
 
 
 <script type="text/javascript">
-    $(function () {
-        $('#solve-equations-btn').attr('disabled', 'true');
-    });
     
     var text;
 
     var checkEquation = function (equation, i) {
-        //if it is equation
-        if (equation.indexOf('=') <= 0 || equation.indexOf('=') != equation.lastIndexOf('=') || equation.lastIndexOf('=') == equation.length - 1) {
-            text += 'Check equation at line ' + (++i) + '\n';
-            $('#result-area').val(text);
-        }
-        //if there is no wrong symbol
-        for (var j = 0; j < equation.length; j++) {
-            if (!checkCode(equation.charCodeAt(j))) {
-                text += 'Equation at line ' + (++i) + ' contains wrong symbol\n';
-                break;
+        if (equation != '') {
+            //if it is equation
+            if (equation.indexOf('=') <= 0 || equation.indexOf('=') != equation.lastIndexOf('=') || equation.lastIndexOf('=') == equation.length - 1) {
+                text += 'Check equation at line ' + (++i) + '\n';
+                showText();
+                return;
+            }
+            //if there is no wrong symbol
+            for (var j = 0; j < equation.length; j++) {
+                if (!checkCode(equation.charCodeAt(j))) {
+                    text += 'Equation at line ' + (++i) + ' contains wrong symbol\n';
+                    showText();
+                    return;
+                }
+            }
+            //if there is smth after = except numbers
+            var equalityPos = equation.indexOf('=');
+            if (equalityPos == equation.length - 1) {
+                text += 'Equation at line ' + (++i) + ' has no rigth side\n';
+                showText();
+            } else {
+                var startIndex;
+                if (equation[equalityPos + 1] == '-') {
+                    if (equalityPos + 1 == equation.length - 1) {
+                        text += 'Equation at line ' + (++i) + ' has wrong right side\n';
+                        showText();
+                        return;
+                    } else startIndex = equalityPos + 2;
+                } else {
+                    startIndex = equalityPos + 1;
+                }
+                for (j = startIndex; j < equation.length; j++) {
+                    if (!(equation[j].toLowerCase() >= '0' && equation[j].toLowerCase() <= '9')) {
+                        text += 'Equation at line ' + (++i) + ' is not in a cannonical form\n';
+                        showText();
+                        return;
+                    }
+                }
             }
         }
-        //if there is smth after = except numbers
-        var equalityPos = equation.indexOf('=');
-        for (j = equalityPos + 1; j < equation.length; j++) {
-            if (!(equation[j].toLowerCase() >= '0' && equation[j].toLowerCase() <= '9')) {
-                text += 'Equation at line ' + (++i) + ' is not in cannonical form\n';
-                break;
-            }
-        }
-    };
-
-    var changeCommas = function (equation) {
-        equation=equation.replace(/,/g, ".");
-        $('#result-area').val($('#result-area').val() + '\n'+ equation);
     };
 
     var checkCode = function(code) {
         return code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 42 && code <= 46 || code == 61 || code == 13 || code == 8;
     };
 
+    $('#equations-field').keydown(function (e) {
+        if (e.keyCode == 8 || e.keyCode == 46) {
+            $('#error-information').hide();
+        }
+    });
+    
     $('#equations-field').keypress(function (e) {
+        $('#error-information').hide();
         if (!checkCode(e.which)) {
             e.preventDefault();
-            alert('You\'re doing smth wrong');
         }
         else {
-            $('#solve-equations-btn').attr('disabled', false); }
-        
+            $('#solve-equations-btn').attr('disabled', false);
+        }
+
     });
 
-    $('#solve-equations-btn').click(function() {
-        var equations = document.getElementById('equations-field').value.split('\n');
+    var showText = function () {
+        debugger;
+        $('#error-information').show();
+        $('#error-information').find('.alert').html(text);
+    };
+
+    $('#solve-equations-btn').click(function () {
         text = '';
-        equations.forEach(changeCommas);
+        if ($('#equations-field').val() === '') {
+            text += 'System should have at least one equation';
+            showText();
+            return;
+        }
+
+        var equations = document.getElementById('equations-field').value.split('\n');
+
+        $('#result-area').val('');
+        $('#result-area').removeClass('alert-error');
         equations.forEach(checkEquation);
         if (text.length != 0) return false;
         $.ajax({
@@ -104,11 +148,19 @@
             data: {
                 equations: JSON.stringify(equations)
             }
-        }).done(function(request) {
+        }).done(function (request) {
+            debugger;
             if (request.result) {
-                $('#result-area').val(request.reason);
+                $('#result-area').val(request.solution);
             } else {
-                alert(request.reason);
+                if (request.reason.isMathematical) {
+                    $('#result-area').val(request.reason.reasonText);
+                    $('#result-area').addClass('alert-error');
+                }
+                else {
+                    text = request.reason.reasonText;
+                    showText();
+                };
             }
         });
     });

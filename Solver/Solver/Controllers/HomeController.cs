@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using System.Web.Script.Serialization;
+using Solver.Models;
 using Solver.Tools;
 
 namespace Solver.Controllers
@@ -19,40 +20,57 @@ namespace Solver.Controllers
         {
             var equationsList = new JavaScriptSerializer().Deserialize<IEnumerable<string>>(equations).ToList();
             RemoveWhiteSpaces(equationsList);
-            if (!equationsList.SystemIsCorrect()) return Json(new {result = false, reason = "It's not a system"});
-            if (!SystemIsSolvable(equationsList)) return Json(new { result = false, reason = "System cannot be solved" });
+            ChangeCommasToPoints(equationsList);
+            if (!equationsList.SystemIsCorrect()) return Json(new {result = false, reason = new Reason{ isMathematical = false, reasonText =  "It's not a system"}});
             float[,] matrix;
             bool isSolved = false;
             try
             {
                 matrix = equationsList.GetMatrix();
-                
             }
             catch(Exception e)
             {
-                return Json(new {result = false, reason = e.Message});
+                if (e is LinearSystemException)
+                {
+                    return
+                        Json(new { result = false, reason = new Reason { isMathematical = true, reasonText = e.Message } });
+                }
+                return Json(new {result = false, reason = new Reason{isMathematical = false, reasonText = e.Message}});
             }
             try
             {
                 isSolved = LinearEquationSolver.Solve(matrix);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                return Json(new {result = false, reason = "This system cannot be solved"});
+                if (e is LinearSystemException)
+                {
+                    return
+                        Json(new {result = false, reason = new Reason {isMathematical = true, reasonText = e.Message}});
+                }
+                return Json(new {result = false, reason = new Reason{isMathematical = false, reasonText = e.Message}});
             }
             
             if (isSolved)
             {
                 var variables = Parser.GetAllVariables(equationsList);
-                var resultList = new List<string>();
+                string resultString = string.Empty;
                 for (int i = 0; i < variables.Count; i++)
                 {
-                    resultList.Add(string.Format("{0}={1}", variables.ElementAt(i), matrix[i, variables.Count]));
+                    resultString += string.Format("{0} = {1}\n", variables.ElementAt(i), matrix[i, variables.Count]);
                 }
-                return Json(new { result = true, reason = resultList });
+                return Json(new { result = true, solution = resultString});
             }
             
-            return Json(new {result = false});
+            return Json(new {result = false, reason = new Reason{isMathematical = true, reasonText = "System is incompatible"}});
+        }
+
+        private void ChangeCommasToPoints(List<string> equations)
+        {
+            for (int i = 0; i < equations.Count; i++)
+            {
+                equations[i] = equations[i].Replace(',', '.');
+            }
         }
 
         public void RemoveWhiteSpaces(List<string> equations)
@@ -77,12 +95,5 @@ namespace Solver.Controllers
             }
             
          }
-
-        public bool SystemIsSolvable(List<string> equations)
-        {
-            var variables = Parser.GetAllVariables(equations);
-            return variables.Any() && variables.Count <= equations.Count;
-        }
-
     }
 }

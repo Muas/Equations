@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Solver.Models;
 
 namespace Solver.Tools
 {
     public static class Parser
     {
-        private static readonly char[] Signs = {'-','+','*','='};
+        private static readonly char[] Signs = {'-','+','*','=','.'};
 
         public static SortedSet<char> GetAllVariables(List<string> equations)
         {
@@ -33,17 +34,14 @@ namespace Solver.Tools
                     if (!Signs.Any(x => x == symbol) && !(symbol >= 'a' && symbol <= 'z') && !(symbol >='0' && symbol <='9'))
                         return false;
                 }
-               
             }
-
-
             return true;
         }
 
         public static float[,] GetMatrix(this List<string> equations)
         {
             var variables = GetAllVariables(equations);
-            float[,] matrix = new float[variables.Count,variables.Count + 1];
+            float[,] matrix = new float[variables.Count,variables.Count+1];
             var i = 0;
             foreach (var equation in equations)
             {
@@ -61,7 +59,7 @@ namespace Solver.Tools
                     }
                     catch (Exception)
                     {
-                        throw new Exception("Wrong right side!");
+                        throw new Exception("has wrong right side");
                     }
                     var j = 0;
                     foreach (var variable in variables)
@@ -75,7 +73,7 @@ namespace Solver.Tools
                 }
                 catch(Exception e)
                 {
-                    throw e;
+                    throw new Exception(string.Format("Equation at line {0} {1}", ++i,e.Message));
                 }
                 i++;
             }
@@ -87,13 +85,16 @@ namespace Solver.Tools
             var conditionList = new SortedList<char, float>();
             var i = 0;
             var currentCoefficient = string.Empty;
+            var leftSideException = new Exception("has wrong left side");
+            if (!(conditionString[conditionString.Length - 1] >= 'a' && conditionString[conditionString.Length - 1] <= 'z'))
+                throw new Exception("is not in a canonical form");
             while (i < conditionString.Length)
             {
                 if (conditionString[i] >= '0' && conditionString[i] <= '9')  
                 {
                     if (i > 0 && (conditionString[i-1] >= 'a' && conditionString[i-1] <= 'z' || conditionString[i-1] == '*'))
                     {
-                        throw new Exception("Wrong sequence!");
+                        throw leftSideException;
                     }
                     currentCoefficient += conditionString[i];
                 }
@@ -101,7 +102,7 @@ namespace Solver.Tools
                 {
                     if (i == 0 || currentCoefficient == string.Empty || !(conditionString[i-1] >='0' && conditionString[i-1] >= '9'))
                     {
-                        throw new Exception("Wrong sequence!");
+                        throw leftSideException;
                     }
                     currentCoefficient += conditionString[i];
                 }
@@ -109,7 +110,7 @@ namespace Solver.Tools
                 {
                     if (i != 0 && !(conditionString[i-1] >= 'a' && conditionString[i-1] <= 'z'))
                     {
-                        throw  new Exception("Wrong sequence!");
+                        throw leftSideException;
                     }
                     currentCoefficient += conditionString[i];
                 }
@@ -118,7 +119,7 @@ namespace Solver.Tools
                     float coefficient;
                     if (i != 0 && conditionString[i-1]  >= 'a' && conditionString[i-1] <= 'z')
                     {
-                        throw new Exception("Wrong sequence!");
+                        throw leftSideException;
                     }
                     if (currentCoefficient == "-")
                         coefficient = -1;
@@ -132,7 +133,7 @@ namespace Solver.Tools
                 {
                     if (i == 0 || !(conditionString[i-1] >='0' && conditionString[i-1] >= '9'))
                     {
-                        throw new Exception("Wrong sequence!");
+                        throw leftSideException;
                     }
                 }
                 i++;
